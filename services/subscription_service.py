@@ -62,70 +62,71 @@ async def create_invite_links(minutes: int):
 
     return channel_link.invite_link, chat_link.invite_link
 
-async def activate_subscription(user_id: int, plan: str):
+#временная функция
+async def deactivate_old_subscriptions(user_id: int):
+    """Деактивирует все старые подписки пользователя."""
+    async with async_session() as session:
+        result = await session.execute(
+            select(Subscription).where(Subscription.user_id == user_id, Subscription.is_active == True)
+        )
+        active_subs = result.scalars().all()
 
+        for sub in active_subs:
+            sub.is_active = False
+            # Можно сбросить уведомления, если нужно:
+            sub.notified_3_days = False
+            sub.notified_1_day = False
+
+        await session.commit()
+        print(f"Deactivated {len(active_subs)} old subscriptions for user {user_id}")
+
+async def activate_subscription(user_id: int, plan: str):
     async with async_session() as session:
 
-        # ищем пользователя
+        # 1️⃣ ищем пользователя
         result = await session.execute(
             select(User).where(User.telegram_id == user_id)
         )
-
         user = result.scalar_one_or_none()
 
-        # если пользователя нет — создаём
         if not user:
-
-            user = User(
-                telegram_id=user_id
-            )
-
+            user = User(telegram_id=user_id)
             session.add(user)
             await session.commit()
 
-        # определяем длительность подписки
-        if plan == "month":
-            minutes = 5
-        else:
-            minutes = 10
-
+        # 2️⃣ определяем длительность подписки
+        minutes = 5 if plan == "month" else 10
         now = datetime.utcnow()
 
-        #временно для тестов
+        # 3️⃣ создаём временный платеж для теста
         payment = Payment(
             user_id=user.id,
             stripe_payment_id="test_payment",
             amount=1499 if plan == "month" else 3999,
             currency="eur"
-        ) 
-
+        )
         session.add(payment)
-        #временно закончилось
 
-        # ищем активную подписку
+        # 4️⃣ ищем активную подписку
         result = await session.execute(
             select(Subscription).where(
                 Subscription.user_id == user.id,
                 Subscription.is_active == True
             )
         )
-
         active_sub = result.scalar_one_or_none()
 
-        # если есть активная подписка и она ещё не закончилась
         if active_sub and active_sub.end_date > now:
-
-            active_sub.end_date = active_sub.end_date + timedelta(minutes=minutes)
-
-            # сбрасываем уведомления
+            # 5️⃣ если подписка активна, прибавляем минуты
+            active_sub.end_date += timedelta(minutes=minutes)
             active_sub.notified_3_days = False
             active_sub.notified_1_day = False
+            print(f"Extended subscription for user {user_id} by {minutes} minutes, new end_date: {active_sub.end_date}")
 
         else:
-
+            # 6️⃣ если подписки нет или она закончилась, создаём новую
             start_date = now
             end_date = start_date + timedelta(minutes=minutes)
-
             subscription = Subscription(
                 user_id=user.id,
                 plan=plan,
@@ -135,11 +136,10 @@ async def activate_subscription(user_id: int, plan: str):
                 notified_3_days=False,
                 notified_1_day=False
             )
-
             session.add(subscription)
+            print(f"Created new subscription for user {user_id}, end_date: {end_date}")
 
         await session.commit()
-
         return minutes
     
     
