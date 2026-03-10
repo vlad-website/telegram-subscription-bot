@@ -44,9 +44,9 @@ async def create_checkout_session(user_id: int, plan: str):
 
     return session.url
 
-async def create_invite_links(days: int):
+async def create_invite_links(minutes: int):
 
-    expire_date = datetime.utcnow() + timedelta(days=1)
+    expire_date = datetime.utcnow() + timedelta(minutes=minutes)
 
     channel_link = await bot.create_chat_invite_link(
         chat_id=Config.CHANNEL_ID,

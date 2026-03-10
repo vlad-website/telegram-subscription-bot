@@ -29,7 +29,7 @@ async def stripe_webhook(request: web.Request):
         session = event["data"]["object"]
 
         # Берем metadata, которую передали при создании checkout
-        user_id = int(session["metadata"]["user_id"])
+        user_id = int(session["metadata"]["telegram_user_id"])
         plan = session["metadata"]["plan"]
 
         await grant_access(user_id, plan)
