@@ -1,27 +1,40 @@
 import asyncio
+import logging
 
 from aiohttp import web
 
-from bot.bot import bot, dp
+from aiogram import Bot, Dispatcher
+from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
+
+from utils.config import Config
+
 from handlers.start import router as start_router
 from handlers.tariffs import router as tariffs_router
+from handlers.admin import router as admin_router
 
 from database.database import create_tables
-from services.stripe_webhook import stripe_webhook
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from services.subscription_checker import check_subscriptions
 
-from handlers.admin import router as admin_router
+
+logging.basicConfig(level=logging.INFO)
+
+bot = Bot(token=Config.BOT_TOKEN)
+dp = Dispatcher()
+
+dp.include_router(start_router)
+dp.include_router(tariffs_router)
+dp.include_router(admin_router)
 
 
-async def main():
+WEBHOOK_PATH = "/webhook"
+WEBHOOK_URL = "https://telegram-subscription-bot-y3mh.onrender.com/webhook"
+
+
+async def on_startup(bot: Bot):
 
     await create_tables()
-
-    dp.include_router(start_router)
-    dp.include_router(tariffs_router)
-    dp.include_router(admin_router)
 
     scheduler = AsyncIOScheduler()
 
@@ -33,19 +46,31 @@ async def main():
 
     scheduler.start()
 
+    await bot.set_webhook(WEBHOOK_URL)
+
+    print("Bot started with webhook")
+
+
+async def main():
+
     app = web.Application()
-    app.router.add_post("/stripe-webhook", stripe_webhook)
 
-    runner = web.AppRunner(app)
-    await runner.setup()
+    SimpleRequestHandler(
+        dispatcher=dp,
+        bot=bot
+    ).register(app, path=WEBHOOK_PATH)
 
-    site = web.TCPSite(runner, "0.0.0.0", 8000)
-    await site.start()
+    setup_application(app, dp, bot=bot)
 
-    print("Bot started")
+    dp.startup.register(on_startup)
 
-    await dp.start_polling(bot)
+    return app
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+
+    web.run_app(
+        main(),
+        host="0.0.0.0",
+        port=10000
+    )
