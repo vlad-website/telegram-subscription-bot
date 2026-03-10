@@ -44,9 +44,9 @@ async def create_checkout_session(user_id: int, plan: str):
 
     return session.url
 
-async def create_invite_links(minutes: int):
+async def create_invite_links(days: int):
 
-    expire_date = datetime.utcnow() + timedelta(minutes=1)
+    expire_date = datetime.utcnow() + timedelta(days=1)
 
     channel_link = await bot.create_chat_invite_link(
         chat_id=Config.CHANNEL_ID,
@@ -85,12 +85,11 @@ async def activate_subscription(user_id: int, plan: str):
 
         # определяем длительность подписки
         if plan == "month":
-            minutes = 30
+            minutes = 5
         else:
-            minutes = 90
+            minutes = 10
 
-        start_date = datetime.utcnow()
-        end_date = start_date + timedelta(minutes=minutes)
+        now = datetime.utcnow()
 
         # временно для тестов
         payment = Payment(
@@ -103,16 +102,42 @@ async def activate_subscription(user_id: int, plan: str):
         session.add(payment)
         #временно закончилось
 
-
-        subscription = Subscription(
-            user_id=user.id,
-            plan=plan,
-            start_date=start_date,
-            end_date=end_date,
-            is_active=True
+        # ищем активную подписку
+        result = await session.execute(
+            select(Subscription).where(
+                Subscription.user_id == user.id,
+                Subscription.is_active == True
+            )
         )
 
-        session.add(subscription)
+        active_sub = result.scalar_one_or_none()
+
+        # если есть активная подписка и она ещё не закончилась
+        if active_sub and active_sub.end_date > now:
+
+            active_sub.end_date = active_sub.end_date + timedelta(minutes=minutes)
+
+            # сбрасываем уведомления
+            active_sub.notified_3_days = False
+            active_sub.notified_1_day = False
+
+        else:
+
+            start_date = now
+            end_date = start_date + timedelta(minutes=minutes)
+
+            subscription = Subscription(
+                user_id=user.id,
+                plan=plan,
+                start_date=start_date,
+                end_date=end_date,
+                is_active=True,
+                notified_3_days=False,
+                notified_1_day=False
+            )
+
+            session.add(subscription)
+
         await session.commit()
 
         return minutes
@@ -123,11 +148,11 @@ async def grant_access(user_id: int, plan: str):
     Активирует подписку и выдаёт invite ссылки пользователю
     """
     days = await activate_subscription(user_id, plan)
-    channel_link, chat_link = await create_invite_links(days)
+    channel_link, chat_link = await create_invite_links(minutes)
 
     # вычисляем даты начала и окончания подписки
     start_date = datetime.utcnow()
-    end_date = start_date + timedelta(days=days)
+    end_date = start_date + timedelta(minutes=minutes)
 
     # форматируем даты для сообщения
     start_str = start_date.strftime("%d.%m.%Y")

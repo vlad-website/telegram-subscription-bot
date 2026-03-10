@@ -42,7 +42,8 @@ async def on_startup(bot: Bot):
     scheduler.add_job(
         check_subscriptions,
         "interval",
-        hours=24
+        minutes=1
+        """ hours=24 """
     )
 
     scheduler.start()

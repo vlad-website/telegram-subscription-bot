@@ -1,11 +1,11 @@
 from datetime import datetime
-
 from sqlalchemy import select
 
 from database.database import async_session
 from database.models import Subscription, User
 from bot.bot import bot
 from utils.config import Config
+
 
 async def check_subscriptions():
 
@@ -21,7 +21,7 @@ async def check_subscriptions():
 
         for sub in subscriptions:
 
-            days_left = (sub.end_date - now).days
+            minutes_left = int((sub.end_date - now).total_seconds() / 60)
 
             user_result = await session.execute(
                 select(User).where(User.id == sub.user_id)
@@ -32,75 +32,35 @@ async def check_subscriptions():
             telegram_id = user.telegram_id
 
             # уведомление за 3 дня
-            if days_left == 3:
+            if minutes_left <= 3 and not sub.notified_3_days:
 
                 await bot.send_message(
                     telegram_id,
                     "Ваша подписка закончится через 3 дня ⚠️\n\n"
                     "Вы будете автоматически удалены из канала и чата\n\n"
-                    "Продлите подписку чтобы продолжать пользоваться чатом и группой"
+                    "Продлите подписку чтобы продолжать пользоваться доступом."
                 )
 
+                sub.notified_3_days = True
+                await session.commit()
+
             # уведомление за 1 день
-            if days_left == 1:
+            if minutes_left <= 1 and not sub.notified_1_day:
 
                 await bot.send_message(
                     telegram_id,
                     "Ваша подписка закончится завтра ⚠️\n\n"
                     "Вы будете автоматически удалены из канала и чата\n\n"
-                    "Продлите подписку чтобы продолжать пользоваться чатом и группой"
+                    "Продлите подписку чтобы продолжать пользоваться доступом."
                 )
 
+                sub.notified_1_day = True
+                await session.commit()
+
             # если подписка закончилась
-            if days_left < 0:
+            if sub.end_date <= now:
 
                 await remove_user_access(telegram_id)
 
                 sub.is_active = False
-
                 await session.commit()
-
-
-
-async def remove_user_access(telegram_id: int):
-
-    try:
-
-        await bot.ban_chat_member(
-            chat_id=Config.CHANNEL_ID,
-            user_id=telegram_id
-        )
-
-        await bot.unban_chat_member(
-            chat_id=Config.CHANNEL_ID,
-            user_id=telegram_id
-        )
-
-    except:
-        pass
-
-    try:
-
-        await bot.ban_chat_member(
-            chat_id=Config.CHAT_ID,
-            user_id=telegram_id
-        )
-
-        await bot.unban_chat_member(
-            chat_id=Config.CHAT_ID,
-            user_id=telegram_id
-        )
-
-    except:
-        pass
-
-    try:
-
-        await bot.send_message(
-            telegram_id,
-            "Ваша подписка закончилась. Доступ был закрыт.\n\n"
-            "Продлите подписку чтобы снова получить доступ"
-        )
-
-    except:
-        pass

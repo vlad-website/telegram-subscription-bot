@@ -36,6 +36,10 @@ class Subscription(Base):
 
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
+    notified_3_days: Mapped[bool] = mapped_column(Boolean, default=False)
+    
+    notified_1_day: Mapped[bool] = mapped_column(Boolean, default=False)
+
     user = relationship("User", back_populates="subscriptions")
 
 
