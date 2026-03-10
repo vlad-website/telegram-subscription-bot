@@ -44,7 +44,7 @@ async def create_checkout_session(user_id: int, plan: str):
 
     return session.url
 
-async def create_invite_links(days: int):
+async def create_invite_links(duration: int):
 
     expire_date = datetime.utcnow() + timedelta(days=1)
 
@@ -147,12 +147,12 @@ async def grant_access(user_id: int, plan: str):
     """
     Активирует подписку и выдаёт invite ссылки пользователю
     """
-    days = await activate_subscription(user_id, plan)
-    channel_link, chat_link = await create_invite_links(days)
+    minutes = await activate_subscription(user_id, plan)
+    channel_link, chat_link = await create_invite_links(minutes)
 
     # вычисляем даты начала и окончания подписки
     start_date = datetime.utcnow()
-    end_date = start_date + timedelta(minutes=days)
+    end_date = start_date + timedelta(minutes=minutes)
 
     # форматируем даты для сообщения
     start_str = start_date.strftime("%d.%m.%Y")
@@ -164,7 +164,7 @@ async def grant_access(user_id: int, plan: str):
         text=(
             "Оплата подтверждена ✅\n\n"
             f"Ваша подписка началась: {start_str}\n"
-            f"Заканчивается: {end_str} ({days} дней)\n\n"
+            #f"Заканчивается: {end_str} ({days} дней)\n\n"
             "Вы будете уведомлены за 3 дня до окончания подписки.\n\n"
             "Ссылки действительны 24 часа:\n\n"
             f"Ссылка на канал:\n{channel_link}\n\n"
