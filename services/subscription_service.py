@@ -174,3 +174,33 @@ async def grant_access(user_id: int, plan: str):
 
     # Возвращаем ссылки на случай, если нужно использовать где-то ещё
     return channel_link, chat_link
+
+async def remove_user_access(telegram_id: int):
+
+    try:
+        await bot.ban_chat_member(
+            chat_id=Config.CHANNEL_ID,
+            user_id=telegram_id
+        )
+
+        await bot.unban_chat_member(
+            chat_id=Config.CHANNEL_ID,
+            user_id=telegram_id
+        )
+
+    except:
+        pass
+
+    try:
+        await bot.ban_chat_member(
+            chat_id=Config.CHAT_ID,
+            user_id=telegram_id
+        )
+
+        await bot.unban_chat_member(
+            chat_id=Config.CHAT_ID,
+            user_id=telegram_id
+        )
+
+    except:
+        pass

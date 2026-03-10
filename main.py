@@ -19,6 +19,7 @@ from services.subscription_checker import check_subscriptions
 from services.stripe_webhook import stripe_webhook
 
 
+
 logging.basicConfig(level=logging.INFO)
 
 bot = Bot(token=Config.BOT_TOKEN)

@@ -6,6 +6,8 @@ from database.models import Subscription, User
 from bot.bot import bot
 from utils.config import Config
 
+from services.subscription_service import remove_user_access
+
 
 async def check_subscriptions():
 
