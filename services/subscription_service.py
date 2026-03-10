@@ -44,9 +44,9 @@ async def create_checkout_session(user_id: int, plan: str):
 
     return session.url
 
-async def create_invite_links(days: int):
+async def create_invite_links(minutes: int):
 
-    expire_date = datetime.utcnow() + timedelta(days=1)
+    expire_date = datetime.utcnow() + timedelta(minutes=1)
 
     channel_link = await bot.create_chat_invite_link(
         chat_id=Config.CHANNEL_ID,
@@ -85,12 +85,12 @@ async def activate_subscription(user_id: int, plan: str):
 
         # определяем длительность подписки
         if plan == "month":
-            days = 30
+            minutes = 30
         else:
-            days = 90
+            minutes = 90
 
         start_date = datetime.utcnow()
-        end_date = start_date + timedelta(days=days)
+        end_date = start_date + timedelta(minutes=minutes)
 
         # временно для тестов
         payment = Payment(
@@ -101,7 +101,7 @@ async def activate_subscription(user_id: int, plan: str):
         )
 
         session.add(payment)
-
+        #временно закончилось
 
 
         subscription = Subscription(
@@ -115,13 +115,37 @@ async def activate_subscription(user_id: int, plan: str):
         session.add(subscription)
         await session.commit()
 
-        return days
+        return minutes
     
     
 async def grant_access(user_id: int, plan: str):
-
+    """
+    Активирует подписку и выдаёт invite ссылки пользователю
+    """
     days = await activate_subscription(user_id, plan)
-
     channel_link, chat_link = await create_invite_links(days)
 
+    # вычисляем даты начала и окончания подписки
+    start_date = datetime.utcnow()
+    end_date = start_date + timedelta(days=days)
+
+    # форматируем даты для сообщения
+    start_str = start_date.strftime("%d.%m.%Y")
+    end_str = end_date.strftime("%d.%m.%Y")
+
+    # отправляем пользователю сообщение
+    await bot.send_message(
+        chat_id=user_id,
+        text=(
+            "Оплата подтверждена ✅\n\n"
+            f"Ваша подписка началась: {start_str}\n"
+            f"Заканчивается: {end_str} ({days} дней)\n\n"
+            "Вы будете уведомлены за 3 дня до окончания подписки.\n\n"
+            "Ссылки действительны 24 часа:\n\n"
+            f"Ссылка на канал:\n{channel_link}\n\n"
+            f"Ссылка на чат:\n{chat_link}"
+        )
+    )
+
+    # Возвращаем ссылки на случай, если нужно использовать где-то ещё
     return channel_link, chat_link

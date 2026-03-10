@@ -53,7 +53,7 @@ async def activate_test(message: Message):
     channel_link, chat_link = await grant_access(
         message.from_user.id,
         "month"
-    )
+    ) 
 
     await message.answer(
         "Оплата подтверждена ✅\n\n"

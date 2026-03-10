@@ -16,6 +16,7 @@ from database.database import create_tables
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from services.subscription_checker import check_subscriptions
+from services.stripe_webhook import stripe_webhook
 
 
 logging.basicConfig(level=logging.INFO)
@@ -60,7 +61,10 @@ async def main():
         bot=bot
     ).register(app, path=WEBHOOK_PATH)
 
-    setup_application(app, dp, bot=bot)
+    setup_application(app, dp, bot=bot)\
+    
+    # Регистрируем Stripe webhook
+    app.router.add_post("/stripe-webhook", stripe_webhook)
 
     dp.startup.register(on_startup)
 
