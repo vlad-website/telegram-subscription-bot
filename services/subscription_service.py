@@ -44,7 +44,7 @@ async def create_checkout_session(user_id: int, plan: str):
 
     return session.url
 
-async def create_invite_links(duration: int):
+async def create_invite_links(days: int):
 
     expire_date = datetime.utcnow() + timedelta(days=1)
 
@@ -85,9 +85,9 @@ async def activate_subscription(user_id: int, plan: str):
 
         # определяем длительность подписки
         if plan == "month":
-            minutes = 5
+            days = 5
         else:
-            minutes = 10
+            days = 10
 
         now = datetime.utcnow()
 
@@ -115,7 +115,7 @@ async def activate_subscription(user_id: int, plan: str):
         # если есть активная подписка и она ещё не закончилась
         if active_sub and active_sub.end_date > now:
 
-            active_sub.end_date = active_sub.end_date + timedelta(minutes=minutes)
+            active_sub.end_date = active_sub.end_date + timedelta(days=days)
 
             # сбрасываем уведомления
             active_sub.notified_3_days = False
@@ -124,7 +124,7 @@ async def activate_subscription(user_id: int, plan: str):
         else:
 
             start_date = now
-            end_date = start_date + timedelta(minutes=minutes)
+            end_date = start_date + timedelta(days=days)
 
             subscription = Subscription(
                 user_id=user.id,
@@ -140,19 +140,19 @@ async def activate_subscription(user_id: int, plan: str):
 
         await session.commit()
 
-        return minutes
+        return days
     
     
 async def grant_access(user_id: int, plan: str):
     """
     Активирует подписку и выдаёт invite ссылки пользователю
     """
-    minutes = await activate_subscription(user_id, plan)
-    channel_link, chat_link = await create_invite_links(minutes)
+    days = await activate_subscription(user_id, plan)
+    channel_link, chat_link = await create_invite_links(days)
 
     # вычисляем даты начала и окончания подписки
     start_date = datetime.utcnow()
-    end_date = start_date + timedelta(minutes=minutes)
+    end_date = start_date + timedelta(days=days)
 
     # форматируем даты для сообщения
     start_str = start_date.strftime("%d.%m.%Y")
@@ -164,7 +164,7 @@ async def grant_access(user_id: int, plan: str):
         text=(
             "Оплата подтверждена ✅\n\n"
             f"Ваша подписка началась: {start_str}\n"
-            #f"Заканчивается: {end_str} ({days} дней)\n\n"
+            f"Заканчивается: {end_str} ({days} дней)\n\n"
             "Вы будете уведомлены за 3 дня до окончания подписки.\n\n"
             "Ссылки действительны 24 часа:\n\n"
             f"Ссылка на канал:\n{channel_link}\n\n"
