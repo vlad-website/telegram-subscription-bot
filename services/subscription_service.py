@@ -92,14 +92,14 @@ async def activate_subscription(user_id: int, plan: str):
         now = datetime.utcnow()
 
         #временно для тестов
-        #payment = Payment(
-        #    user_id=user.id,
-        #    stripe_payment_id="test_payment",
-        #    amount=1000 if plan == "month" else 2500,
-        #    currency="eur"
-        #) 
+        payment = Payment(
+            user_id=user.id,
+            stripe_payment_id="test_payment",
+            amount=1499 if plan == "month" else 3999,
+            currency="eur"
+        ) 
 
-        #session.add(payment)
+        session.add(payment)
         #временно закончилось
 
         # ищем активную подписку

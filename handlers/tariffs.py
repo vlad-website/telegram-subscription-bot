@@ -38,7 +38,7 @@ async def show_tariffs(message: Message):
     )
 
 
-""" @router.message(Command("test_invite"))
+@router.message(Command("test_invite"))
 async def test_invite(message: Message):
 
     channel_link, chat_link = await create_invite_links(30)
@@ -60,7 +60,7 @@ async def activate_test(message: Message):
         "Ссылки действительны 24 часа\n\n"
         f"Ссылка на канал:\n{channel_link}\n\n"
         f"Ссылка на чат:\n{chat_link}"
-    ) """
+    )
 
 @router.callback_query(lambda c: c.data == "buy_month")
 async def buy_month(callback: CallbackQuery):
