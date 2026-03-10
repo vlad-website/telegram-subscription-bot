@@ -23,7 +23,8 @@ async def check_subscriptions():
 
         for sub in subscriptions:
 
-            days_left = (sub.end_date - now).days
+            minutes_left = int((sub.end_date - now).total_seconds() / 60)
+            #(sub.end_date - now).days
 
             user_result = await session.execute(
                 select(User).where(User.id == sub.user_id)
@@ -34,7 +35,7 @@ async def check_subscriptions():
             telegram_id = user.telegram_id
 
             # уведомление за 3 дня
-            if days_left <= 3 and not sub.notified_3_days:
+            if minutes_left <= 3 and not sub.notified_3_days:
 
                 await bot.send_message(
                     telegram_id,
@@ -47,7 +48,7 @@ async def check_subscriptions():
                 await session.commit()
 
             # уведомление за 1 день
-            if days_left <= 1 and not sub.notified_1_day:
+            if minutes_left <= 1 and not sub.notified_1_day:
 
                 await bot.send_message(
                     telegram_id,
