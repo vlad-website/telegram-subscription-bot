@@ -43,7 +43,8 @@ async def on_startup(bot: Bot):
     scheduler.add_job(
         check_subscriptions,
         "interval",
-        minutes=1
+        minutes=1, 
+        coalesce=True
     )
 
     scheduler.start()
@@ -72,10 +73,16 @@ async def main():
     return app
 
 
-if __name__ == "__main__":
+#if __name__ == "__main__":
 
-    web.run_app(
-        main(),
-        host="0.0.0.0",
-        port=10000
-    )
+#    web.run_app(
+#        main(),
+#        host="0.0.0.0",
+#        port=10000
+#    )
+
+
+if __name__ == "__main__":
+    import asyncio
+    app = asyncio.run(main())  # запускаем корутину и получаем app
+    web.run_app(app, host="0.0.0.0", port=10000)

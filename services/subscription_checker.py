@@ -23,7 +23,7 @@ async def check_subscriptions():
 
         for sub in subscriptions:
 
-            minutes_left = int((sub.end_date - now).total_seconds() / 60)
+            minutes_left = (sub.end_date - now).total_seconds() / 60
             #(sub.end_date - now).days
 
             user_result = await session.execute(
