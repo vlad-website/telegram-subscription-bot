@@ -31,7 +31,3 @@ async def start_handler(message: Message):
         text,
         reply_markup=main_menu_keyboard()
     )
-
-@router.message()
-async def debug(message: Message):
-    await message.answer(str(message.chat.id))
