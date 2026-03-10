@@ -148,11 +148,11 @@ async def grant_access(user_id: int, plan: str):
     Активирует подписку и выдаёт invite ссылки пользователю
     """
     days = await activate_subscription(user_id, plan)
-    channel_link, chat_link = await create_invite_links(minutes)
+    channel_link, chat_link = await create_invite_links(days)
 
     # вычисляем даты начала и окончания подписки
     start_date = datetime.utcnow()
-    end_date = start_date + timedelta(minutes=minutes)
+    end_date = start_date + timedelta(minutes=days)
 
     # форматируем даты для сообщения
     start_str = start_date.strftime("%d.%m.%Y")
