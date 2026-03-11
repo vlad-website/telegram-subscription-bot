@@ -8,6 +8,7 @@ class Config:
     BOT_TOKEN = os.getenv("BOT_TOKEN")
     DATABASE_URL = os.getenv("DATABASE_URL")
     STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
+    STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 
     CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
     CHAT_ID = int(os.getenv("CHAT_ID"))
