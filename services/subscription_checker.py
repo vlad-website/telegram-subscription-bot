@@ -6,6 +6,8 @@ from database.models import Subscription, User
 from bot.bot import bot
 from services.subscription_service import remove_user_access
 
+from keyboards.tariffs import renew_subscription_keyboard
+
 import logging
 logging.basicConfig(level=logging.INFO)
 
@@ -41,6 +43,8 @@ async def check_subscriptions():
                         "⚠️ Ваша подписка закончится через 3 минуты!\n\n"
                         "Вы будете автоматически удалены из канала и чата, "
                         "если не продлите подписку."
+                        "Нажмите кнопку ниже, чтобы продлить подписку.",
+                        reply_markup=renew_subscription_keyboard()
                     )
                     logging.info(f"Sent 3-min warning to {telegram_id}")
                 except Exception as e:
@@ -57,6 +61,8 @@ async def check_subscriptions():
                         "⚠️ Ваша подписка закончится через 1 минуту!\n\n"
                         "Вы будете автоматически удалены из канала и чата, "
                         "если не продлите подписку."
+                        "Нажмите кнопку ниже, чтобы продлить подписку.",
+                        reply_markup=renew_subscription_keyboard()
                     )
                     logging.info(f"Sent 1-min warning to {telegram_id}")
                 except Exception as e:
@@ -69,6 +75,14 @@ async def check_subscriptions():
             if sub.end_date <= now:
                 try:
                     await remove_user_access(telegram_id)
+
+                    await bot.send_message(
+                        telegram_id,
+                        "❌ Ваша подписка закончилась.\n\n"
+                        "Вы были удалены из канала и чата.\n\n"
+                        "Нажмите кнопку ниже, чтобы продлить подписку.",
+                        reply_markup=renew_subscription_keyboard()
+                    )
                     logging.info(f"Removed access for user {telegram_id}")
                 except Exception as e:
                     logging.error(f"Failed to remove access for {telegram_id}: {e}")

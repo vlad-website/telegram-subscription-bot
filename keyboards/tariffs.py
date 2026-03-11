@@ -19,5 +19,18 @@ def tariffs_keyboard():
             ]
         ]
     )
+    return keyboard
+
+def renew_subscription_keyboard():
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="💳 Продлить подписку",
+                    callback_data="tariffs"
+                )
+            ]
+        ]
+    )
 
     return keyboard
