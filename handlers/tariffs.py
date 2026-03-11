@@ -1,6 +1,7 @@
 from aiogram import Router
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters import Command
+from aiogram import F
 
 from keyboards.tariffs import tariffs_keyboard
 from services.subscription_service import create_checkout_session
@@ -11,6 +12,33 @@ from services.subscription_service import grant_access
 
 router = Router()
 
+
+@router.callback_query(F.data == "tariffs")
+async def show_tariffs_callback(callback: CallbackQuery):
+
+    text = (
+        """Ты не просто оформляешь подписку 💫  
+Ты входишь в закрытый женский круг,  
+где тебя понимают с полуслова. 🤍
+
+Каждый месяц в клубе тебя ждут:
+
+🏋️‍♀️ тренировки, рецепты и полезные лайфхаки  
+🎧 подкасты, советы, мои фишечки и секреты  
+💬 закрытый чат для общения и поддержки  
+🧘‍♀️ практики, ритуалы и закрытые материалы  
+✨ пространство, где можно быть собой
+
+Это больше, чем клуб.  
+Это место силы для женщин. 🌙"""
+    )
+
+    await callback.message.answer(
+        text,
+        reply_markup=tariffs_keyboard()
+    )
+
+    await callback.answer()
 
 @router.message(lambda message: message.text == "💳 Тарифы")
 async def show_tariffs(message: Message):
