@@ -80,7 +80,7 @@ async def deactivate_old_subscriptions(user_id: int):
         await session.commit()
         print(f"Deactivated {len(active_subs)} old subscriptions for user {user_id}")
 
-async def activate_subscription(user_id: int, plan: str):
+async def activate_subscription(user_id: int, plan: str, payment_intent: str):
     async with async_session() as session:
 
         # 1️⃣ ищем пользователя
@@ -98,14 +98,7 @@ async def activate_subscription(user_id: int, plan: str):
         minutes = 5 if plan == "month" else 10
         now = datetime.utcnow()
 
-        # 3️⃣ создаём временный платеж для теста
-        #payment = Payment(
-        #    user_id=user.id,
-        #    stripe_payment_id="payment_intent",
-        #    amount=1499 if plan == "month" else 3999,
-        #    currency="eur"
-        #)
-        payment_intent = session.get("payment_intent")  # это поле есть в payload
+        # 3️⃣ создаём платеж с настоящим payment_intent
         payment = Payment(
             user_id=user.id,
             stripe_payment_id=payment_intent,
@@ -150,28 +143,20 @@ async def activate_subscription(user_id: int, plan: str):
         return minutes
     
     
-async def grant_access(user_id: int, plan: str):
-    """
-    Активирует подписку и выдаёт invite ссылки пользователю
-    """
-    minutes = await activate_subscription(user_id, plan)
+async def grant_access(user_id: int, plan: str, payment_intent: str):
+    minutes = await activate_subscription(user_id, plan, payment_intent)
     channel_link, chat_link = await create_invite_links(minutes)
 
-    # вычисляем даты начала и окончания подписки
     start_date = datetime.utcnow()
     end_date = start_date + timedelta(minutes=minutes)
-
-    # форматируем даты для сообщения
     start_str = start_date.strftime("%d.%m.%Y")
     end_str = end_date.strftime("%d.%m.%Y")
 
-    # отправляем пользователю сообщение
     await bot.send_message(
         chat_id=user_id,
         text=(
             "Оплата подтверждена ✅\n\n"
             f"Ваша подписка началась: {start_str}\n"
-            #f"Заканчивается: {end_str} ({days} дней)\n\n"
             "Вы будете уведомлены за 3 дня до окончания подписки.\n\n"
             "Ссылки действительны 24 часа:\n\n"
             f"Ссылка на канал:\n{channel_link}\n\n"
@@ -179,7 +164,6 @@ async def grant_access(user_id: int, plan: str):
         )
     )
 
-    # Возвращаем ссылки на случай, если нужно использовать где-то ещё
     return channel_link, chat_link
 
 async def remove_user_access(telegram_id: int):

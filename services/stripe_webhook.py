@@ -33,22 +33,16 @@ async def stripe_webhook(request: web.Request):
         print("📩 Event type:", event["type"])
 
         if event["type"] == "checkout.session.completed":
-
-            session = event["data"]["object"]
-
-            print("SESSION DATA:", session)
-
-            metadata = session.get("metadata", {})
-
-            print("METADATA:", metadata)
+            session_data = event["data"]["object"]
+            metadata = session_data.get("metadata", {})
 
             user_id = int(metadata["telegram_user_id"])
             plan = metadata["plan"]
+            payment_intent = session_data.get("payment_intent")
 
-            print("USER:", user_id)
-            print("PLAN:", plan)
+            print(f"USER: {user_id}, PLAN: {plan}, PAYMENT_INTENT: {payment_intent}")
 
-            await grant_access(user_id, plan)
+            await grant_access(user_id, plan, payment_intent)
 
             print("✅ ACCESS GRANTED")
 
