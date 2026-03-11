@@ -99,9 +99,16 @@ async def activate_subscription(user_id: int, plan: str):
         now = datetime.utcnow()
 
         # 3️⃣ создаём временный платеж для теста
+        #payment = Payment(
+        #    user_id=user.id,
+        #    stripe_payment_id="payment_intent",
+        #    amount=1499 if plan == "month" else 3999,
+        #    currency="eur"
+        #)
+        payment_intent = session.get("payment_intent")  # это поле есть в payload
         payment = Payment(
             user_id=user.id,
-            stripe_payment_id="test_payment",
+            stripe_payment_id=payment_intent,
             amount=1499 if plan == "month" else 3999,
             currency="eur"
         )
