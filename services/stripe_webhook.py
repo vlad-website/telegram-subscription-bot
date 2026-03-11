@@ -1,4 +1,5 @@
 import stripe
+import traceback
 from aiohttp import web
 
 from utils.config import Config
@@ -9,29 +10,53 @@ stripe.api_key = Config.STRIPE_SECRET_KEY
 
 async def stripe_webhook(request: web.Request):
 
+    print("🔥 WEBHOOK CALLED")
+
     payload = await request.text()
     sig_header = request.headers.get("Stripe-Signature")
 
     try:
         event = stripe.Webhook.construct_event(
-            payload=payload,
-            sig_header=sig_header,
-            secret=Config.STRIPE_WEBHOOK_SECRET
+            payload,
+            sig_header,
+            Config.STRIPE_WEBHOOK_SECRET
         )
-    except stripe.error.SignatureVerificationError:
-        return web.Response(status=400, text="Invalid signature")
-    except Exception:
-        return web.Response(status=400, text="Webhook error")
+        print("✅ Signature verified")
 
-    # Событие оплаты завершено
-    if event["type"] == "checkout.session.completed":
+    except Exception as e:
+        print("❌ SIGNATURE ERROR")
+        print(e)
+        return web.Response(status=400, text="Signature error")
 
-        session = event["data"]["object"]
+    try:
 
-        # Берем metadata, которую передали при создании checkout
-        user_id = int(session["metadata"]["telegram_user_id"])
-        plan = session["metadata"]["plan"]
+        print("📩 Event type:", event["type"])
 
-        await grant_access(user_id, plan)
+        if event["type"] == "checkout.session.completed":
+
+            session = event["data"]["object"]
+
+            print("SESSION DATA:", session)
+
+            metadata = session.get("metadata", {})
+
+            print("METADATA:", metadata)
+
+            user_id = int(metadata["telegram_user_id"])
+            plan = metadata["plan"]
+
+            print("USER:", user_id)
+            print("PLAN:", plan)
+
+            await grant_access(user_id, plan)
+
+            print("✅ ACCESS GRANTED")
+
+    except Exception as e:
+
+        print("❌ PROCESSING ERROR")
+        traceback.print_exc()
+
+        return web.Response(status=400, text="Processing error")
 
     return web.Response(text="ok")
