@@ -30,7 +30,7 @@ async def on_app_startup(app: web.Application):
 
     # APScheduler
     scheduler = AsyncIOScheduler()
-    scheduler.add_job(check_subscriptions, "interval", seconds=30, coalesce=True, max_instances=1)
+    scheduler.add_job(check_subscriptions, "interval", hours=6, coalesce=True, max_instances=1)
     scheduler.start()
 
     await bot.set_webhook(WEBHOOK_URL)

@@ -24,7 +24,7 @@ async def check_subscriptions():
         now = datetime.utcnow()
 
         for sub in subscriptions:
-            minutes_left = (sub.end_date - now).total_seconds() / 60
+            days_left = (sub.end_date - now).total_seconds() / 86400
 
             # Получаем пользователя
             user_result = await session.execute(
@@ -33,14 +33,14 @@ async def check_subscriptions():
             user = user_result.scalar_one()
             telegram_id = user.telegram_id
 
-            logging.info(f"Subscription for user {telegram_id}: {minutes_left:.2f} minutes left")
+            logging.info(f"Subscription for user {telegram_id}: {days_left:.2f} days left")
 
-            # --- Уведомление за 3 минуты ---
-            if minutes_left <= 3 and not sub.notified_3_days and minutes_left > 0:
+            # --- Уведомление за 3 дня ---
+            if days_left <= 3 and not sub.notified_3_days and days_left > 0:
                 try:
                     await bot.send_message(
                         telegram_id,
-                        "⚠️ Ваша подписка закончится через 3 минуты!\n\n"
+                        "⚠️ Ваша подписка закончится через 3 дня!\n\n"
                         "Вы будете автоматически удалены из канала и чата, "
                         "если не продлите подписку.\n\n"
                         "Нажмите кнопку ниже, чтобы продлить подписку.",
@@ -53,8 +53,8 @@ async def check_subscriptions():
                 sub.notified_3_days = True
                 await session.commit()
 
-            # --- Уведомление за 1 минуту ---
-            if minutes_left <= 1 and not sub.notified_1_day and minutes_left > 0:
+            # --- Уведомление за 1 день ---
+            if days_left <= 1 and not sub.notified_1_day and days_left > 0:
                 try:
                     await bot.send_message(
                         telegram_id,

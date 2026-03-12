@@ -87,7 +87,7 @@ async def activate_subscription(user_id: int, plan: str, payment_intent: str):
             await session.commit()
 
         # 2️⃣ определяем длительность подписки
-        minutes = 5 if plan == "month" else 10
+        days = 30 if plan == "month" else 90
         now = datetime.utcnow()
 
         # 3️⃣ создаём платеж с настоящим payment_intent
@@ -110,15 +110,15 @@ async def activate_subscription(user_id: int, plan: str, payment_intent: str):
 
         if active_sub and active_sub.end_date > now:
             # 5️⃣ если подписка активна, прибавляем минуты
-            active_sub.end_date += timedelta(minutes=minutes)
+            active_sub.end_date += timedelta(days=days)
             active_sub.notified_3_days = False
             active_sub.notified_1_day = False
-            print(f"Extended subscription for user {user_id} by {minutes} minutes, new end_date: {active_sub.end_date}")
+            print(f"Extended subscription for user {user_id} by {days} minutes, new end_date: {active_sub.end_date}")
 
         else:
             # 6️⃣ если подписки нет или она закончилась, создаём новую
             start_date = now
-            end_date = start_date + timedelta(minutes=minutes)
+            end_date = start_date + timedelta(days=days)
             subscription = Subscription(
                 user_id=user.id,
                 plan=plan,
@@ -132,21 +132,21 @@ async def activate_subscription(user_id: int, plan: str, payment_intent: str):
             print(f"Created new subscription for user {user_id}, end_date: {end_date}")
 
         await session.commit()
-        return minutes
+        return days
     
     
 async def grant_access(user_id: int, plan: str, payment_intent: str):
-    minutes = await activate_subscription(user_id, plan, payment_intent)
+    days = await activate_subscription(user_id, plan, payment_intent)
 
     # если платеж уже был обработан — ничего не делаем
-    if minutes is None:
+    if days is None:
         print("Duplicate webhook ignored")
         return
     
-    channel_link, chat_link = await create_invite_links(minutes)
+    channel_link, chat_link = await create_invite_links(days)
 
     start_date = datetime.utcnow()
-    end_date = start_date + timedelta(minutes=minutes)
+    end_date = start_date + timedelta(days=days)
     start_str = start_date.strftime("%d.%m.%Y")
     end_str = end_date.strftime("%d.%m.%Y")
 
