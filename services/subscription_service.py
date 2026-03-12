@@ -27,7 +27,7 @@ async def create_checkout_session(user_id: int, plan: str):
                     "product_data": {
                         "name": f"Подписка {plan}",
                     },
-                    "unit_amount": 99 if plan == "month" else 3999,
+                    "unit_amount": 1499 if plan == "month" else 3999,
                 },
                 "quantity": 1,
             }

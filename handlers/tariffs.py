@@ -65,21 +65,21 @@ async def show_tariffs(message: Message):
         reply_markup=tariffs_keyboard()
     )
 
-@router.message(Command("activate_test"))
-async def activate_test(message: Message):
+#@router.message(Command("activate_test"))
+#async def activate_test(message: Message):
 
-    channel_link, chat_link = await grant_access(
-        message.from_user.id,
-        "month",
-        "test_payment"
-    ) 
+#    channel_link, chat_link = await grant_access(
+#        message.from_user.id,
+#        "month",
+#        "test_payment"
+#    ) 
 
-    await message.answer(
-        "Оплата подтверждена ✅\n\n"
-        "Ссылки действительны 24 часа\n\n"
-        f"Ссылка на канал:\n{channel_link}\n\n"
-        f"Ссылка на чат:\n{chat_link}"
-    )
+#    await message.answer(
+#        "Оплата подтверждена ✅\n\n"
+#        "Ссылки действительны 24 часа\n\n"
+#        f"Ссылка на канал:\n{channel_link}\n\n"
+#        f"Ссылка на чат:\n{chat_link}"
+#    )
 
 @router.callback_query(lambda c: c.data == "buy_month")
 async def buy_month(callback: CallbackQuery):
