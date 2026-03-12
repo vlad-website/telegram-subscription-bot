@@ -62,26 +62,18 @@ async def create_invite_links(minutes: int):
 
     return channel_link.invite_link, chat_link.invite_link
 
-#временная функция
-async def deactivate_old_subscriptions(user_id: int):
-    """Деактивирует все старые подписки пользователя."""
-    async with async_session() as session:
-        result = await session.execute(
-            select(Subscription).where(Subscription.user_id == user_id, Subscription.is_active == True)
-        )
-        active_subs = result.scalars().all()
-
-        for sub in active_subs:
-            sub.is_active = False
-            # Можно сбросить уведомления, если нужно:
-            sub.notified_3_days = False
-            sub.notified_1_day = False
-
-        await session.commit()
-        print(f"Deactivated {len(active_subs)} old subscriptions for user {user_id}")
-
 async def activate_subscription(user_id: int, plan: str, payment_intent: str):
     async with async_session() as session:
+
+        # Проверяем, не обработан ли уже этот платеж
+        result = await session.execute(
+            select(Payment).where(Payment.stripe_payment_id == payment_intent)
+        )
+        existing_payment = result.scalar_one_or_none()
+
+        if existing_payment:
+            print(f"⚠️ Payment {payment_intent} already processed")
+            return None
 
         # 1️⃣ ищем пользователя
         result = await session.execute(
@@ -145,6 +137,12 @@ async def activate_subscription(user_id: int, plan: str, payment_intent: str):
     
 async def grant_access(user_id: int, plan: str, payment_intent: str):
     minutes = await activate_subscription(user_id, plan, payment_intent)
+
+    # если платеж уже был обработан — ничего не делаем
+    if minutes is None:
+        print("Duplicate webhook ignored")
+        return
+    
     channel_link, chat_link = await create_invite_links(minutes)
 
     start_date = datetime.utcnow()
@@ -157,6 +155,7 @@ async def grant_access(user_id: int, plan: str, payment_intent: str):
         text=(
             "Оплата подтверждена ✅\n\n"
             f"Ваша подписка началась: {start_str}\n"
+            f"Заканчивается: {end_str}\n\n"
             "Вы будете уведомлены за 3 дня до окончания подписки.\n\n"
             "Ссылки действительны 24 часа:\n\n"
             f"Ссылка на канал:\n{channel_link}\n\n"

@@ -50,7 +50,7 @@ class Payment(Base):
 
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
 
-    stripe_payment_id: Mapped[str] = mapped_column(String)
+    stripe_payment_id: Mapped[str] = mapped_column(String, unique=True)
 
     amount: Mapped[int] = mapped_column()
 
