@@ -70,7 +70,8 @@ async def activate_test(message: Message):
 
     channel_link, chat_link = await grant_access(
         message.from_user.id,
-        "month"
+        "month",
+        "test_payment"
     ) 
 
     await message.answer(
